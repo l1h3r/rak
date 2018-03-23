@@ -2,6 +2,26 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :logger, level: :info
+
+config :mnesia,
+  dir: 'mnesia/#{Mix.env()}/#{node()}',
+  debug: :trace
+
+config :rak,
+  # storage_adapter: Rak.Persistence.Memory,
+  # storage_adapter: Rak.Persistence.Mnesia,
+  # storage_adapter: Rak.Persistence.ETS,
+  queues: [:background, :default, :immediate]
+
+if Mix.env() == :test do
+  config :mnesia, debug: :none
+
+  config :rak,
+    storage_adapter: Rak.Persistence.Memory,
+    queues: [:background, :default, :immediate]
+end
+
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,
@@ -10,11 +30,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :worker, key: :value
+#     config :rak, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:worker, :key)
+#     Application.get_env(:rak, :key)
 #
 # You can also configure a 3rd-party app:
 #
