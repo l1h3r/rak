@@ -13,6 +13,11 @@ defmodule Rak.Persistence.Mnesia do
 
   @table Config.get([:mnesia, :table])
 
+  # ====== #
+  # Client #
+  # ====== #
+
+  @impl true
   def start_link(_ \\ []) do
     :ok = :mnesia.start()
     :ok = __MODULE__.Setup.wait()
@@ -20,6 +25,7 @@ defmodule Rak.Persistence.Mnesia do
     :ignore
   end
 
+  @impl true
   def all do
     transaction(fn ->
       {@table, :_, :_}
@@ -28,6 +34,7 @@ defmodule Rak.Persistence.Mnesia do
     end)
   end
 
+  @impl true
   def find(jid) do
     transaction(fn ->
       @table
@@ -38,6 +45,7 @@ defmodule Rak.Persistence.Mnesia do
     end)
   end
 
+  @impl true
   def by_status(status) do
     transaction(fn ->
       @table
@@ -47,12 +55,14 @@ defmodule Rak.Persistence.Mnesia do
     end)
   end
 
+  @impl true
   def destroy(jid) do
     transaction(fn ->
       :mnesia.delete(@table, jid, :write)
     end)
   end
 
+  @impl true
   def insert(job) do
     transaction(fn ->
       :ok =
@@ -64,6 +74,7 @@ defmodule Rak.Persistence.Mnesia do
     end)
   end
 
+  @impl true
   def update(job) do
     transaction(fn ->
       :ok =
@@ -75,6 +86,7 @@ defmodule Rak.Persistence.Mnesia do
     end)
   end
 
+  @impl true
   def clear do
     case :mnesia.clear_table(@table) do
       {:atomic, :ok} -> :ok

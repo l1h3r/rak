@@ -63,31 +63,31 @@ defmodule Rak.Persistence do
 
       @behaviour Persistence
 
-      @spec start_link(opts :: keyword()) :: Supervisor.on_start()
+      @impl true
       def start_link(_), do: :ignore
 
-      @spec child_spec(opts :: keyword()) :: Supervisor.child_spec()
+      @impl true
       def child_spec(_), do: %{id: __MODULE__, start: {__MODULE__, :start_link, []}}
 
-      @spec all :: list(Job.t())
+      @impl true
       def all, do: []
 
-      @spec find(jid :: Job.jid()) :: Job.t() | nil
+      @impl true
       def find(jid), do: nil
 
-      @spec by_status(status :: Job.status()) :: list(Job.t())
+      @impl true
       def by_status(status), do: []
 
-      @spec destroy(jid :: Job.jid()) :: :ok | no_return()
+      @impl true
       def destroy(jid), do: :ok
 
-      @spec insert(job :: Job.t()) :: Job.t()
+      @impl true
       def insert(job), do: job
 
-      @spec update(job :: Job.t()) :: Job.t()
+      @impl true
       def update(job), do: job
 
-      @spec clear :: :ok | no_return()
+      @impl true
       def clear, do: :ok
 
       defoverridable Persistence

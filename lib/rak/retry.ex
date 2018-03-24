@@ -17,7 +17,7 @@ defmodule Rak.Retry do
 
       @behaviour Retry
 
-      @spec retry_in(attempt :: integer()) :: integer()
+      @impl true
       def retry_in(_), do: 0
 
       defoverridable Retry

@@ -31,11 +31,8 @@ defmodule Rak.Stats do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec basic :: map()
-  def basic, do: GenServer.call(__MODULE__, :basic)
-
-  @spec full :: map()
-  def full, do: GenServer.call(__MODULE__, :full)
+  @spec data :: map()
+  def data, do: GenServer.call(__MODULE__, :data)
 
   # ====== #
   # Server #
@@ -49,9 +46,7 @@ defmodule Rak.Stats do
     {:ok, []}
   end
 
-  def handle_call(:full, _, state), do: {:reply, stats(:full), state}
-
-  def handle_call(:basic, _, state), do: {:reply, stats(:basic), state}
+  def handle_call(:data, _, state), do: {:reply, stats(), state}
 
   def handle_info({:completed, _}, state), do: increment(:completed, state)
 
@@ -73,17 +68,14 @@ defmodule Rak.Stats do
     {:noreply, state}
   end
 
-  @spec stats(key :: :full | :basic) :: map()
-  defp stats(key), do: stats(key, Persistence.all())
-
-  @spec stats(key :: :full | :basic, jobs :: list()) :: map()
-  defp stats(:full, jobs), do: :basic |> stats(jobs) |> Map.put(:jobs, jobs)
-
-  defp stats(:basic, jobs) do
-    base = @counters |> Enum.map(&{&1, 0}) |> Enum.into(%{})
+  @spec stats :: map()
+  defp stats do
+    jobs = Persistence.all()
     data = @table |> :ets.tab2list() |> Enum.into(%{})
 
-    base
+    @counters
+    |> Enum.map(&{&1, 0})
+    |> Enum.into(%{})
     |> Map.merge(data)
     |> Map.put(:enqueued, count_status(jobs, :enqueued))
     |> Map.put(:scheduled, count_status(jobs, :scheduled))

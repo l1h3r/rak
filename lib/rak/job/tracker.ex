@@ -101,7 +101,7 @@ defmodule Rak.Job.Tracker do
       if condition.(job) do
         :ok = log(:debug, job, "Flushing")
 
-        %Job{} = Rak.flush_job(job)
+        %Job{} = Rak.flush(job)
 
         acc
       else

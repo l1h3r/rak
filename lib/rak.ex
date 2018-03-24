@@ -19,7 +19,6 @@ defmodule Rak do
   @type delay :: {:seconds | :minutes | :hours, integer()}
 
   def start(_type, _args), do: start_link()
-
   defdelegate start_link(opts \\ []), to: Supervisor
   defdelegate child_spec(opts), to: Supervisor
 
@@ -28,29 +27,27 @@ defmodule Rak do
   defdelegate c(path, default \\ nil), to: Config, as: :get
   defdelegate subscribe, to: Job.Event
   defdelegate unsubscribe, to: Job.Event
-  defdelegate job_ids, to: Job.Generator, as: :keys
+  defdelegate stats, to: Stats, as: :data
+  defdelegate jobs, to: Persistence, as: :all
+  defdelegate jobs(status), to: Persistence, as: :by_status
+
   defdelegate scheduled_queue, to: Job.Tracker, as: :queue
   defdelegate purge_scheduled, to: Job.Tracker, as: :purge
   defdelegate flush_scheduled, to: Job.Tracker, as: :flush
   defdelegate reload_scheduled, to: Job.Tracker, as: :reload
   defdelegate valid_worker?(module), to: Worker, as: :valid?
   defdelegate validate_worker!(module), to: Worker, as: :validate!
-  defdelegate valid_job?(job), to: Job, as: :valid?
-  defdelegate expired_job?(job), to: Job, as: :expired?
-  defdelegate job_concurrency(job), to: Job, as: :concurrency
-  defdelegate queue_status(name), to: Queue.Server, as: :status
-  defdelegate jobs, to: Persistence, as: :all
-  defdelegate jobs(status), to: Persistence, as: :by_status
-  defdelegate stats, to: Stats, as: :basic
-  defdelegate stats2, to: Stats, as: :full
-  defdelegate retry_job(job), to: __MODULE__, as: :run_clean
-  defdelegate flush_job(job), to: __MODULE__, as: :run_clean
 
-  @spec retry_failed :: list(Job.t())
-  def retry_failed, do: :failed |> jobs() |> Enum.map(&retry_job/1)
+  defdelegate retry(job), to: __MODULE__, as: :run_clean
+  defdelegate flush(job), to: __MODULE__, as: :run_clean
 
   @spec run_clean(job :: Job.t()) :: Job.t()
-  def run_clean(%Job{} = job), do: job |> Job.error() |> Job.status(:enqueued) |> Job.enqueue()
+  def run_clean(%Job{} = job) do
+    job
+    |> Job.error()
+    |> Job.status(:enqueued)
+    |> Job.enqueue()
+  end
 
   @doc """
   Enqueue a job to be run in the background.

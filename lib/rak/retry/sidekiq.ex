@@ -4,6 +4,7 @@ defmodule Rak.Retry.Sidekiq do
   """
   use Rak.Retry
 
+  @impl true
   def retry_in(attempt) do
     attempt
     |> :math.pow(4)

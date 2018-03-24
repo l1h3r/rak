@@ -2,7 +2,10 @@ defmodule Rak.Job do
   @moduledoc """
   Rak Job
   """
-  use Rak.Util.Logger
+  use Rak.Util.{
+    Accessor,
+    Logger
+  }
 
   alias Rak.{
     Config,
@@ -106,7 +109,7 @@ defmodule Rak.Job do
       :scheduled
 
       iex> create(RakTest.Worker, [], status: :banana)
-      ** (ArgumentError) Invalid value for job `status`: :banana
+      ** (ArgumentError) Invalid value for `status`: :banana
 
       iex> at = :os.system_time(:milli_seconds) + 50
       iex> RakTest.Worker |> create([], perform_at: at) |> expired?()
@@ -142,11 +145,7 @@ defmodule Rak.Job do
 
   """
   @spec enqueue(job :: t) :: t
-  def enqueue(%Job{} = job) do
-    job
-    |> persist()
-    |> register()
-  end
+  def enqueue(%Job{} = job), do: job |> persist() |> register()
 
   @doc """
   Executes a job as a spawned process.
@@ -176,8 +175,7 @@ defmodule Rak.Job do
       false
 
   """
-  @spec status?(status :: atom()) :: boolean()
-  def status?(status), do: status in @statuses
+  enum(:status?, @statuses)
 
   @doc """
   Checks if the given job is valid.
@@ -247,16 +245,11 @@ defmodule Rak.Job do
       %Job{error: "failed"}
 
       iex> error(%Job{}, ["failed", "more failed"])
-      ** (ArgumentError) Invalid value for job `error`: ["failed", "more failed"]
+      ** (ArgumentError) Invalid value for `error`: ["failed", "more failed"]
 
   """
-  @spec error(job :: t, reason :: String.t() | nil) :: t
-  def error(_, _ \\ nil)
-
-  def error(%Job{} = job, reason) when is_binary(reason) or is_nil(reason),
-    do: %Job{job | error: reason}
-
-  def error(_, reason), do: raise_attr_error(:error, reason)
+  accessor(:error, :reason)
+  def error(job), do: error(job, nil)
 
   @doc """
   Sets job `status` to the given `status`
@@ -270,12 +263,10 @@ defmodule Rak.Job do
       %Job{status: :scheduled}
 
       iex> status(%Job{status: :failed}, [:hello])
-      ** (ArgumentError) Invalid value for job `status`: [:hello]
+      ** (ArgumentError) Invalid value for `status`: [:hello]
 
   """
-  @spec status(job :: t, status :: atom()) :: t
-  def status(%Job{} = job, status) when status in @statuses, do: %Job{job | status: status}
-  def status(_, status), do: raise_attr_error(:status, status)
+  accessor(:status, :atom, @statuses)
 
   @doc """
   Sets job `queue` to the given `queue`
@@ -286,18 +277,10 @@ defmodule Rak.Job do
       %Job{queue: :immediate}
 
       iex> queue(%Job{queue: :default}, %{name: :default})
-      ** (ArgumentError) Invalid value for job `queue`: %{name: :default}
+      ** (ArgumentError) Invalid value for `queue`: %{name: :default}
 
   """
-  @spec queue(job :: t, queue :: atom()) :: t
-  def queue(%Job{} = job, queue) when queue in @queues, do: %Job{job | queue: queue}
-  def queue(_, queue), do: raise_attr_error(:queue, queue)
-
-  @doc """
-  Sets job `id` to the given `id`. See `id/2`.
-  """
-  @spec id(job :: t) :: t
-  def id(%Job{} = job), do: id(job, Generator.generate())
+  accessor(:queue, :atom, @queues)
 
   @doc """
   Sets job `id` to the given `id`
@@ -308,12 +291,11 @@ defmodule Rak.Job do
       %Job{id: "job-123"}
 
       iex> id(%Job{id: nil}, ["hello", "world"])
-      ** (ArgumentError) Invalid value for job `id`: ["hello", "world"]
+      ** (ArgumentError) Invalid value for `id`: ["hello", "world"]
 
   """
-  @spec id(job :: t, id :: String.t()) :: t
-  def id(%Job{} = job, id) when is_binary(id), do: %Job{job | id: id}
-  def id(_, id), do: raise_attr_error(:id, id)
+  accessor(:id, :binary)
+  def id(job), do: id(job, Generator.generate())
 
   @doc """
   Sets job `perform_at` from the given `delay` or to the given `datetime`.
@@ -324,12 +306,10 @@ defmodule Rak.Job do
       %Job{perform_at: 5000}
 
       iex> perform_at(%Job{}, %{delay: 10000})
-      ** (ArgumentError) Invalid value for job `perform_at`: %{delay: 10000}
+      ** (ArgumentError) Invalid value for `perform_at`: %{delay: 10000}
 
   """
-  @spec perform_at(job :: t, at :: integer()) :: t
-  def perform_at(%Job{} = job, at) when is_integer(at), do: %Job{job | perform_at: at}
-  def perform_at(_, at), do: raise_attr_error(:perform_at, at)
+  accessor(:perform_at, :integer)
 
   # ======= #
   # Private #
@@ -342,11 +322,6 @@ defmodule Rak.Job do
     else
       job
     end
-  end
-
-  @spec raise_attr_error(key :: atom(), value :: any()) :: no_return()
-  defp raise_attr_error(key, value) do
-    raise(ArgumentError, "Invalid value for job `#{key}`: #{inspect(value)}")
   end
 
   @spec register(job :: t) :: t

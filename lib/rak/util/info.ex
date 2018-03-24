@@ -22,7 +22,7 @@ defmodule Rak.Util.Info do
       config: Config.all(),
       jobs: [
         keys: Generator.keys() |> Enum.count(),
-        stats: Stats.basic()
+        stats: Stats.data()
       ],
       persistence: [
         adapter: Persistence.adapter(),
