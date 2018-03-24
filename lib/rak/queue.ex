@@ -2,17 +2,35 @@ defmodule Rak.Queue do
   @moduledoc """
   Rak Queue
   """
+  use Rak.Util.Accessor
+
   alias Rak.{
     Config,
     Job,
     Queue
   }
 
-  defstruct name: :default, pending: :queue.new(), running: 0
+  defstruct name: :default,
+            pending: :queue.new(),
+            running: 0,
+            status: :idle
 
-  @type t :: %Queue{name: atom(), pending: :queue.queue(), running: non_neg_integer()}
+  @type t :: %Queue{
+          name: atom(),
+          pending: :queue.queue(),
+          running: non_neg_integer(),
+          status: atom()
+        }
 
   @type item :: {Job.t(), pid()}
+
+  @statuses [:idle, :active, :suspended]
+
+  @doc """
+  Returns a list of all queue statuses.
+  """
+  @spec statuses :: list(atom())
+  def statuses, do: @statuses
 
   @doc """
   Returns a list of all available queue names.
@@ -30,12 +48,17 @@ defmodule Rak.Queue do
       iex> queue = push(queue, {%Rak.Job{}, self()})
       iex> queue = push(queue, {%Rak.Job{}, self()})
       iex> info(queue)
-      [name: :test, running: 0, pending: 3]
+      [name: :test, status: :idle, running: 0, pending: 3]
 
   """
   @spec info(queue :: t) :: keyword()
-  def info(%Queue{name: name, running: running, pending: pending}) do
-    [name: name, running: running, pending: :queue.len(pending)]
+  def info(%Queue{name: name, status: status, running: running, pending: pending}) do
+    [
+      name: name,
+      status: status,
+      running: running,
+      pending: :queue.len(pending)
+    ]
   end
 
   @doc """
@@ -57,9 +80,48 @@ defmodule Rak.Queue do
     do: raise(ArgumentError, "Expected queue name to be an atom. got: #{inspect(name)}")
 
   @doc """
+  Checks if the given status is valid.
+
+  ## Examples
+
+      iex> status?(:suspended)
+      true
+
+      iex> status?(:banana)
+      false
+
+  """
+  enum(:status?, @statuses)
+
+  @doc """
+  Sets queue `status` to the given `status`
+
+  ## Examples
+
+      iex> status(%Queue{status: :idle}, :suspended)
+      %Queue{status: :suspended}
+
+      iex> status(%Queue{status: :idle}, :banana)
+      ** (ArgumentError) Invalid value for `status`: :banana
+
+  """
+  accessor(:status, :atom, @statuses)
+
+  @doc """
   Checks if the job can be performed in the queue.
+
+  ## Examples
+
+      iex> allowed?(%Queue{status: :suspended}, %Job{})
+      false
+
+      iex> allowed?(%Queue{status: :idle}, %Job{module: RakTest.Worker})
+      true
+
   """
   @spec allowed?(queue :: t, job :: Job.t()) :: boolean()
+  def allowed?(%Queue{status: :suspended}, %Job{}), do: false
+
   def allowed?(%Queue{running: running}, %Job{} = job) do
     case Job.concurrency(job) do
       :infinite -> true

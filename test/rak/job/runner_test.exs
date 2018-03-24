@@ -22,7 +22,7 @@ defmodule Rak.Job.RunnerTest do
       job = Job.create(RakTest.Worker, [], status: :enqueued)
 
       assert %Job{status: :enqueued} = Runner.register(job)
-      assert :ok = :timer.sleep(100)
+      assert :ok = :timer.sleep(3)
       assert Persistence.find(job.id) == nil
     end
 
@@ -30,7 +30,7 @@ defmodule Rak.Job.RunnerTest do
       job = Job.create(RakTest.Worker, :fail, status: :enqueued)
 
       assert %Job{status: :enqueued} = Runner.register(job)
-      assert :ok = :timer.sleep(100)
+      assert :ok = :timer.sleep(3)
       assert %Job{status: :failed} = Persistence.find(job.id)
     end
   end

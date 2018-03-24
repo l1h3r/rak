@@ -1,6 +1,11 @@
 defmodule Rak.QueueTest do
   use RakTest.Case
-  alias Rak.Queue
+
+  alias Rak.{
+    Job,
+    Queue
+  }
+
   import Queue
   doctest Queue
 end

@@ -27,6 +27,8 @@ defmodule Rak do
   defdelegate c(path, default \\ nil), to: Config, as: :get
   defdelegate subscribe, to: Job.Event
   defdelegate unsubscribe, to: Job.Event
+  defdelegate resume(name), to: Queue.Server
+  defdelegate suspend(name), to: Queue.Server
   defdelegate stats, to: Stats, as: :data
   defdelegate jobs, to: Persistence, as: :all
   defdelegate jobs(status), to: Persistence, as: :by_status

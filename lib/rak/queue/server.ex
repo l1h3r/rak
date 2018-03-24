@@ -10,7 +10,7 @@ defmodule Rak.Queue.Server do
   }
 
   @type item :: Queue.item()
-  @type name :: atom() | pid()
+  @type name :: atom() | pid() | {:via, {module(), atom()}}
 
   # ====== #
   # Client #
@@ -53,6 +53,28 @@ defmodule Rak.Queue.Server do
   @spec status(name :: name()) :: keyword()
   def status(name), do: name |> via() |> GenServer.call(:status)
 
+  @doc """
+  Resumes job execution for the given queue.
+  """
+  @spec resume(name :: name()) :: :ok
+  def resume(name), do: name |> via() |> GenServer.cast(:resume)
+
+  @doc """
+  Suspends job execution for the given queue.
+  """
+  @spec suspend(name :: name()) :: :ok
+  def suspend(name), do: name |> via() |> GenServer.cast(:suspend)
+
+  @spec wait(name :: name()) :: no_return()
+  def wait(name) do
+    receive do
+      {:run, job} ->
+        result = Job.execute(job)
+        :ok = name |> via() |> confirm(job)
+        result
+    end
+  end
+
   # ====== #
   # Server #
   # ====== #
@@ -65,38 +87,43 @@ defmodule Rak.Queue.Server do
 
   def handle_cast({:confirm, job}, queue), do: {:noreply, queue |> Queue.decr() |> next_or(job)}
 
+  def handle_cast(:resume, %Queue{status: :suspended} = queue) do
+    {:noreply, queue |> Queue.status(:idle) |> run_next()}
+  end
+
+  def handle_cast(:resume, queue), do: {:noreply, queue}
+
+  def handle_cast(:suspend, %Queue{status: :suspended} = queue), do: {:noreply, queue}
+  def handle_cast(:suspend, queue), do: {:noreply, Queue.status(queue, :suspended)}
+
   # ======= #
   # Private #
   # ======= #
 
-  @spec wait(name :: atom()) :: no_return()
-  defp wait(name) do
-    receive do
-      {:run, job} ->
-        result = Job.execute(job)
-        :ok = confirm(name, job)
-        result
-    end
-  end
-
   @spec run_now(queue :: Queue.t(), {job :: Job.t(), caller :: pid()}) :: Queue.t()
-  defp run_now(queue, {job, caller}) do
+  defp run_now(%Queue{} = queue, {job, caller}) do
     send(caller, {:run, job})
-    Queue.incr(queue)
+
+    queue
+    |> Queue.incr()
+    |> Queue.status(:active)
   end
 
   @spec run_next(queue :: Queue.t()) :: Queue.t()
-  defp run_next(queue) do
+  defp run_next(%Queue{} = queue) do
     queue
     |> Queue.pop()
     |> case do
-      {{job, caller}, queue} -> run_now(queue, {job, caller})
-      _ -> queue
+      {{job, caller}, queue} ->
+        run_now(queue, {job, caller})
+
+      _ ->
+        Queue.status(queue, :idle)
     end
   end
 
   @spec now_or(queue :: Queue.t(), item :: item()) :: Queue.t()
-  defp now_or(queue, {job, caller}) do
+  defp now_or(%Queue{} = queue, {job, caller}) do
     if Queue.allowed?(queue, job) do
       run_now(queue, {job, caller})
     else
@@ -113,7 +140,8 @@ defmodule Rak.Queue.Server do
     end
   end
 
-  @spec via(name :: name()) :: pid() | {:via, {module(), atom()}}
+  @spec via(name :: name()) :: pid() | name()
   defp via(pid) when is_pid(pid), do: pid
+  defp via({:global, {__MODULE__, _}} = name), do: name
   defp via(name), do: {:global, {__MODULE__, :"rak_queue_#{name}"}}
 end
