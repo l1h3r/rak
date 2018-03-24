@@ -107,6 +107,10 @@ defmodule Rak.Persistence.ETSTest do
   use Rak.PersistenceTest, adapter: Rak.Persistence.ETS
 end
 
+defmodule Rak.Persistence.DETSTest do
+  use Rak.PersistenceTest, adapter: Rak.Persistence.DETS
+end
+
 defmodule Rak.Persistence.MnesiaTest do
   use Rak.PersistenceTest, adapter: Rak.Persistence.Mnesia
   import ExUnit.CaptureIO

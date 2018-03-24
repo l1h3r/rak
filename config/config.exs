@@ -12,6 +12,7 @@ config :rak,
   # storage_adapter: Rak.Persistence.Memory,
   # storage_adapter: Rak.Persistence.Mnesia,
   # storage_adapter: Rak.Persistence.ETS,
+  # storage_adapter: Rak.Persistence.DETS,
   queues: [:background, :default, :immediate]
 
 if Mix.env() == :test do

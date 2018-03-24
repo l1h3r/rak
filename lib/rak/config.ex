@@ -32,6 +32,10 @@ defmodule Rak.Config do
     mnesia: [
       timeout: 5000,
       table: Persistence.Mnesia.DB
+    ],
+    # DETS storage settings
+    dets: [
+      dir: 'dets/#{Mix.env()}'
     ]
   ]
 
