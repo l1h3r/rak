@@ -9,7 +9,8 @@ defmodule Rak.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: dialyzer()
+      dialyzer: dialyzer(),
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -29,7 +30,8 @@ defmodule Rak.MixProject do
   defp deps do
     [
       {:credo, "~> 0.9.0-rc8", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5.1", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 0.5.1", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.8.1", only: [:dev, :test]}
     ]
   end
 

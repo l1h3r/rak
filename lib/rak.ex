@@ -10,7 +10,6 @@ defmodule Rak do
     Persistence,
     Queue,
     Stats,
-    Supervisor,
     Util,
     Util.Datetime,
     Worker
@@ -19,8 +18,8 @@ defmodule Rak do
   @type delay :: {:seconds | :minutes | :hours, integer()}
 
   def start(_type, _args), do: start_link()
-  defdelegate start_link(opts \\ []), to: Supervisor
-  defdelegate child_spec(opts), to: Supervisor
+  defdelegate start_link(opts \\ []), to: Rak.Supervisor
+  defdelegate child_spec(opts), to: Rak.Supervisor
 
   defdelegate i, to: Util.Info, as: :info
   defdelegate c, to: Config, as: :all
